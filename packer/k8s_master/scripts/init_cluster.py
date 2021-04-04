@@ -3,6 +3,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 
 def run(load_balancer_dns):
   cluster_data = {
@@ -26,6 +27,8 @@ def run(load_balancer_dns):
   # apply cni
   run_cmd("mkdir -p /root/.kube")
   run_cmd("cp /etc/kubernetes/admin.conf /root/.kube/config")
+
+  time.sleep(15) # sometimes cluster is not completely ready yet I think??
   run_cmd("kubectl apply -f /root/config/calico.yaml")
 
   return {
