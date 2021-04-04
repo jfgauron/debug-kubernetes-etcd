@@ -1,0 +1,39 @@
+{
+  "variables": {
+    "source_hash": null
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "source_ami": "ami-0996d3051b72b5b2c",
+      "instance_type": "t3.small",
+      "ssh_username": "ubuntu",
+      "ami_name": "k8s-master-{{timestamp}}",
+      "tags": {
+        "source_hash": "{{user `source_hash`}}"
+      }
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "{{template_dir}}/config",
+      "destination": "/tmp/config"
+    },
+    {
+      "type": "file",
+      "source": "{{template_dir}}/scripts",
+      "destination": "/tmp/scripts"
+    },
+    {
+      "type": "shell",
+      "script": "{{template_dir}}/provision.sh"
+    }
+  ]
+}
