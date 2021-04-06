@@ -80,9 +80,8 @@ CERTIFICATE_KEY=`echo $INIT_RESULT | jq '.cluster_data.Credentials.CertificateKe
 
 **8. Join Cluster**
 ```
-$EXEC_MASTER2 "sudo python3 /root/scripts/join_cluster.py $LB_DNS $TOKEN $DISCOVERY_HASH $CERTIFICATE_KEY > /tmp/join.txt"
-JOIN_RESULT=`$EXEC_BASTION cat /tmp/join.txt`
-echo $JOIN_RESULT
+JOIN_RESULT=`$EXEC_MASTER2 "sudo python3 /root/scripts/join_cluster.py $LB_DNS $TOKEN $DISCOVERY_HASH $CERTIFICATE_KEY"`
+echo $JOIN_RESULT | jq
 ```
 
 If the output contains `"result": "SUCCESS"`, it means the node successfully joined the cluster. Repeat step 4 to 8 to try and get a failure. In my experience, there is about a 50% chance of success. When the join command fails, you'll start seeing error output such as:
