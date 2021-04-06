@@ -1,0 +1,8 @@
+{
+  "LoadBalancerDNS": "k8s-control-plane-lb-85ee5000397df985.elb.us-east-2.amazonaws.com",
+  "Credentials": {
+    "Token": "ompu28.rsus2e6duadssirh",
+    "DiscoveryHash": "sha256:b0c48c9de11a62b3e26fa0305ff8bbdd83ed2b8bf54a516a9643808d7beabe65",
+    "CertificateKey": "b5e2bf90f3a2e22569de30fbde86543108bcfa4336dc7c009047d603ba8406ba"
+  }
+}

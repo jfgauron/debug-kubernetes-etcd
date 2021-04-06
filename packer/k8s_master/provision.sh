@@ -5,8 +5,15 @@ ETCD_VER=v3.2.32
 GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
 DOWNLOAD_URL=${GITHUB_URL}
 
+K8S_VERSION="1.20.5-00"
+
 sudo -i -u root bash << SUDOEOF
 set -e
+
+# swapoff -a permanently
+swapoff -a
+sed -i.bak '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
 apt-get update
 
 # Ubuntu 20.04 (ami-0996d3051b72b5b2c)
@@ -47,7 +54,7 @@ cat <<EOF | tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update
-apt-get install -y kubelet kubeadm kubectl
+apt-get install -qy kubelet=${K8S_VERSION} kubeadm=${K8S_VERSION} kubectl=${K8S_VERSION}
 apt-mark hold kubelet kubeadm kubectl
 
 
@@ -61,18 +68,23 @@ mv /tmp/etcd-download-test/etcdctl /usr/bin/etcdctl
 
 
 ## Pull all required images
-kubeadm config images pull
-ctr -n=k8s.io image pull docker.io/calico/kube-controllers:v3.18.1
-ctr -n=k8s.io image pull docker.io/calico/node:v3.18.1
-ctr -n=k8s.io image pull docker.io/calico/cni:v3.18.1
-ctr -n=k8s.io image pull docker.io/calico/pod2daemon-flexvol:v3.18.1
+kubeadm config images pull --kubernetes-version stable-1.19
+# ctr -n=k8s.io image pull docker.io/calico/kube-controllers:v3.18.1
+# ctr -n=k8s.io image pull docker.io/calico/node:v3.18.1
+# ctr -n=k8s.io image pull docker.io/calico/cni:v3.18.1
+# ctr -n=k8s.io image pull docker.io/calico/pod2daemon-flexvol:v3.18.1
 
 
 # We run kubeadm init for 2 reasons:
 # 1) It validates that our dependencies are correct
 # 2) It downloads all the files we will need locally since our actual node won't be connected to the internet
 kubeadm init --upload-certs --config /root/config/kubeadm.yaml
+mkdir -p /root/.kube
+cp -i /etc/kubernetes/admin.conf /root/.kube/config
+kubectl apply -f /root/config/calico.yaml
 kubeadm reset -f
+rm -rf /etc/cni
+rm -rf /root/.kube
 
 mv /tmp/scripts /root/scripts
 SUDOEOF

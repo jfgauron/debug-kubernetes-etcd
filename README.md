@@ -1,5 +1,9 @@
 Requires `packer`, `terraform`, and `jq`
 
+`logs/` contains the logs from a previous failure. It might be enough to find the problem. If you'd rather try it yourself you can simply run `./test.sh`.
+
+The script will try creating and joining a cluster until it fails. When it fails, it will simply hangs (not sure why...). Just CTRL+C out of the script and you can then SSH (using the bastion instance) into master1 or master2 to get further debug information. If you'd rather do it manually, follow the following steps:
+
 **1. Setup ssh-agent**
 
 Required to ssh from bastion to private control plane nodes.
@@ -76,8 +80,9 @@ CERTIFICATE_KEY=`echo $INIT_RESULT | jq '.cluster_data.Credentials.CertificateKe
 
 **8. Join Cluster**
 ```
-JOIN_RESULT=`$EXEC_MASTER2 sudo python3 /root/scripts/join_cluster.py $LB_DNS $TOKEN $DISCOVERY_HASH $CERTIFICATE_KEY`
-echo $JOIN_RESULT | jq
+$EXEC_MASTER2 "sudo python3 /root/scripts/join_cluster.py $LB_DNS $TOKEN $DISCOVERY_HASH $CERTIFICATE_KEY > /tmp/join.txt"
+JOIN_RESULT=`$EXEC_BASTION cat /tmp/join.txt`
+echo $JOIN_RESULT
 ```
 
 If the output contains `"result": "SUCCESS"`, it means the node successfully joined the cluster. Repeat step 4 to 8 to try and get a failure. In my experience, there is about a 50% chance of success. When the join command fails, you'll start seeing error output such as:

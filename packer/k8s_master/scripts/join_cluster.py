@@ -5,8 +5,6 @@ import subprocess
 import sys
 
 def run(loadbalancer_dns, token, discovery_hash, certificate_key):
-  #run_cmd(["kubeadm", "join", "--token", "--config", "/root/kubeadm.yaml"])
-
   command = [
     "kubeadm", "join", "%s:6443" % loadbalancer_dns,
     "--token", token,
@@ -23,17 +21,14 @@ def run(loadbalancer_dns, token, discovery_hash, certificate_key):
 
   return {
     "result": "SUCCESS" if "new control plane instance was created" in output else "ERROR",
-    "output": output,
+    "output": output
   }
 
 ##################################
 # Helper methods
 ##################################
 def run_cmd(command):
-  process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-  stdout, stderr = process.communicate()
-  return stdout.decode('utf-8')
-  #return subprocess.run(command, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+  return subprocess.run(command + " 2>&1", stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
 
 
 if len(sys.argv) < 5:

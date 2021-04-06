@@ -14,7 +14,7 @@ def run(load_balancer_dns):
   update_config_with_dns(load_balancer_dns)
 
   # run kubeadm init
-  init_output = run_cmd("kubeadm init --upload-certs --config /root/config/kubeadm.yaml")
+  init_output = run_cmd("kubeadm init --upload-certs --config /root/config/kubeadm.yaml --v=10")
   if "initialized successfully!" not in init_output:
     return {
       "result": "FAILED",
@@ -27,23 +27,27 @@ def run(load_balancer_dns):
   # apply cni
   run_cmd("mkdir -p /root/.kube")
   run_cmd("cp /etc/kubernetes/admin.conf /root/.kube/config")
-
-  time.sleep(15) # sometimes cluster is not completely ready yet I think??
-  run_cmd("kubectl apply -f /root/config/calico.yaml")
+  cni_output = run_cmd("kubectl apply -f /root/config/calico.yaml")
+  if "created" not in cni_output:
+    return {
+      "result": "CNI_FAILED",
+      "cni_output": cni_output,
+      "init_output": init_output,
+      "cluster_data": cluster_data
+    }
 
   return {
     "result": "SUCCESS",
-    "cluster_data": cluster_data
+    "cni_output": cni_output,
+    "init_output": init_output,
+    "cluster_data": cluster_data,
   }
 
 ##################################
 # Helper methods
 ##################################
 def run_cmd(command):
-  process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-  stdout, stderr = process.communicate()
-  return stdout.decode('utf-8')
-  #return subprocess.run(command, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+  return subprocess.run(command + " 2>&1", stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
 
 def update_config_with_dns(load_balancer_dns):
   run_cmd("sed -i s/{{LOAD_BALANCER_DNS}}/%s/g /root/config/kubeadm.yaml" % load_balancer_dns)
